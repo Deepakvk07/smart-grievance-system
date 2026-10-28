@@ -15,21 +15,13 @@ import { AdminComplaintDetail } from './pages/admin/AdminComplaintDetail';
 
 import { NotFound } from './pages/NotFound';
 
-// Root redirect handler: directly opens public Civic Portal (or admin if logged in as admin)
-const RootRedirect = () => {
-  const { isAdminAuthenticated, loading } = useAuth();
-  if (loading) return null;
-  if (isAdminAuthenticated) return <Navigate to="/admin/dashboard" replace />;
-  return <CitizenDashboard />;
-};
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Main Website (Public & Direct - No Login Required) */}
-          <Route path="/" element={<RootRedirect />} />
+          {/* Main Grievance User Portal (Public & Direct) */}
+          <Route path="/" element={<CitizenDashboard />} />
           <Route path="/dashboard" element={<CitizenDashboard />} />
 
           {/* Public Complaint Tracking */}
