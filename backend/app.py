@@ -58,12 +58,14 @@ def serve_frontend(path):
         'frontend_dev_server': 'http://localhost:5173'
     })
 
+# Initialize database and ML on import (needed for Gunicorn / production)
+print("--- SMART GRIEVANCE PRIORITY SYSTEM INITIALIZING ---")
+init_db()
+seed_database()
+print("Database verified and seeded.")
+print("ML Classification Engine ready.")
+
 def main():
-    print("--- SMART GRIEVANCE PRIORITY SYSTEM INITIALIZING ---")
-    init_db()
-    seed_database()
-    print("Database verified and seeded.")
-    print("ML Classification Engine ready.")
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
 
