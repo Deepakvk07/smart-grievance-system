@@ -2,13 +2,26 @@ import sqlite3
 import os
 import sys
 import json
+import shutil
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'grievance_system.db')
+def get_db_path():
+    if os.environ.get('VERCEL'):
+        tmp_db = '/tmp/grievance_system.db'
+        bundled_db = os.path.join(os.path.dirname(__file__), 'grievance_system.db')
+        if not os.path.exists(tmp_db) and os.path.exists(bundled_db):
+            try:
+                shutil.copy2(bundled_db, tmp_db)
+            except Exception as e:
+                print(f"Notice: copying DB to /tmp: {e}")
+        return tmp_db
+    return os.path.join(os.path.dirname(__file__), 'grievance_system.db')
+
+DB_PATH = get_db_path()
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(get_db_path())
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
