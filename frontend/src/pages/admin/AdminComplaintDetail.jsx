@@ -24,64 +24,70 @@ export const AdminComplaintDetail = () => {
   useEffect(() => { fetchDetail(); }, [id]);
 
   const fetchDetail = async () => {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-      setError('');
-      const res = await api.getComplaintDetail(id, true);
-      if (res && res.success && res.complaint) {
-        setComplaint(res.complaint);
-        setStatusVal(res.complaint.status);
-        return;
+      // 1. Try API
+      try {
+        const res = await api.getComplaintDetail(id, true);
+        if (res && res.success && res.complaint) {
+          setComplaint(res.complaint);
+          setStatusVal(res.complaint.status);
+          return;
+        }
+      } catch (err) {
+        console.warn('Admin fetch complaint error:', err);
       }
-    } catch (err) {
-      console.warn('Admin fetch complaint error:', err);
-    }
 
-    try {
-      const raw = localStorage.getItem('smart_grievance_complaints');
-      if (raw) {
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) {
-          const targetClean = String(id || '').trim().toLowerCase();
-          const found = list.find(c => {
-            const cid = String(c.complaint_id || '').trim().toLowerCase();
-            return cid === targetClean || cid === `grv-${targetClean}` || cid.replace('grv-', '') === targetClean;
-          });
-          if (found) {
-            setComplaint(found);
-            setStatusVal(found.status);
-            return;
+      // 2. Direct localStorage backup
+      try {
+        const raw = localStorage.getItem('smart_grievance_complaints');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const targetClean = String(id || '').trim().toLowerCase();
+            const found = list.find(c => {
+              const cid = String(c.complaint_id || '').trim().toLowerCase();
+              return cid === targetClean || cid === `grv-${targetClean}` || cid.replace('grv-', '') === targetClean;
+            });
+            if (found) {
+              setComplaint(found);
+              setStatusVal(found.status);
+              return;
+            }
           }
         }
-      }
-    } catch {}
+      } catch {}
 
-    const rawId = (id || '').trim().toUpperCase();
-    const fallbackId = rawId.startsWith('GRV-') ? rawId : `GRV-${rawId}`;
-    const fallback = {
-      complaint_id: fallbackId,
-      citizen_name: 'Verified Citizen (सत्यापित नागरिक)',
-      citizen_mobile: '9876543210',
-      title: 'Civic Grievance Record / जन शिकायत',
-      description: 'Grievance assigned for administrative review and triage.',
-      location: 'Ward Municipal Jurisdiction',
-      category: 'Road',
-      priority: 'Medium',
-      status: 'Submitted',
-      assigned_department: 'Road Department',
-      created_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
-      history: [
-        {
-          status: 'Submitted',
-          remarks: 'Complaint logged in municipal redressal portal.',
-          updated_by: 'System',
-          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
-        }
-      ]
-    };
-    setComplaint(fallback);
-    setStatusVal(fallback.status);
-    setLoading(false);
+      // 3. Fallback record
+      const rawId = (id || '').trim().toUpperCase();
+      const fallbackId = rawId.startsWith('GRV-') ? rawId : `GRV-${rawId}`;
+      const fallback = {
+        complaint_id: fallbackId,
+        citizen_name: 'Verified Citizen (सत्यापित नागरिक)',
+        citizen_mobile: '9876543210',
+        title: 'Civic Grievance Record / जन शिकायत',
+        description: 'Grievance assigned for administrative review and triage.',
+        location: 'Ward Municipal Jurisdiction',
+        category: 'Road',
+        priority: 'Medium',
+        status: 'Submitted',
+        assigned_department: 'Road Department',
+        created_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        history: [
+          {
+            status: 'Submitted',
+            remarks: 'Complaint logged in municipal redressal portal.',
+            updated_by: 'System',
+            timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
+          }
+        ]
+      };
+      setComplaint(fallback);
+      setStatusVal(fallback.status);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAssignDepartment = async (departmentName) => {
