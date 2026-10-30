@@ -14,9 +14,11 @@ export const AdminDepartments = () => {
     try {
       setLoading(true);
       const res = await api.getDepartments();
-      if (res.success) setDepartments(res.departments || []);
+      if (res && res.success && Array.isArray(res.departments)) {
+        setDepartments(res.departments);
+      }
     } catch (err) {
-      console.error(err);
+      console.warn('Departments fetch notice:', err);
     } finally {
       setLoading(false);
     }

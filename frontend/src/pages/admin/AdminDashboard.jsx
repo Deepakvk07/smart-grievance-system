@@ -33,12 +33,31 @@ export const AdminDashboard = () => {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await api.getPriorityQueue();
-      if (res.success) setComplaints(res.complaints || []);
-    } catch (err) {
-      console.error('Failed to load complaints:', err);
+      try {
+        const res = await api.getPriorityQueue();
+        if (res && res.success && Array.isArray(res.complaints) && res.complaints.length > 0) {
+          setComplaints(res.complaints);
+          return;
+        }
+      } catch (err) {
+        console.warn('Failed to load complaints from API:', err);
+      }
+
+      // Direct fallback to localStorage
+      try {
+        const raw = localStorage.getItem('smart_grievance_complaints');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) {
+            setComplaints(list);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('LocalStorage error in AdminDashboard:', e);
+      }
     } finally {
       setLoading(false);
     }
