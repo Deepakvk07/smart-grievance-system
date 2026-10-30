@@ -12,7 +12,8 @@ from routes.notification_routes import notification_bp
 from routes.geocode_routes import geocode_bp
 
 app = Flask(__name__, static_folder='../frontend/dist')
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.url_map.strict_slashes = False
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # Register blueprints
 app.register_blueprint(auth_bp)
@@ -24,17 +25,24 @@ app.register_blueprint(geocode_bp)
 # Global error handlers
 @app.errorhandler(404)
 def not_found(e):
-    # If API route, return JSON
     if '/api/' in sys.argv or 'api' in str(e):
         return jsonify({'success': False, 'message': 'API endpoint not found'}), 404
     return jsonify({'success': False, 'message': 'Resource not found'}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    return jsonify({'success': False, 'message': 'Method Not Allowed on this endpoint', 'error': str(e)}), 405
 
 @app.errorhandler(500)
 def server_error(e):
     return jsonify({'success': False, 'message': 'Internal municipal server error', 'error': str(e)}), 500
 
-@app.route('/api/health', methods=['GET'])
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
 def health():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
     return jsonify({
         'status': 'HEALTHY',
         'system': 'Smart Grievance Priority System (B.Tech Final Year)',
@@ -44,9 +52,15 @@ def health():
     }), 200
 
 # Serve frontend build if dist exists
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/<path:path>', methods=['GET', 'POST', 'OPTIONS'])
 def serve_frontend(path):
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    if path.startswith('api/') or path == 'api':
+        return jsonify({'success': False, 'message': f'API endpoint /{path} not found'}), 404
+    if request.method != 'GET':
+        return jsonify({'success': False, 'message': 'Method Not Allowed on static route'}), 405
     dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/dist'))
     if path != "" and os.path.exists(os.path.join(dist_dir, path)):
         return send_from_directory(dist_dir, path)

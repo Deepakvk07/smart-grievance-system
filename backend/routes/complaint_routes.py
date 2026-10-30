@@ -63,8 +63,13 @@ def generate_ai_acknowledgment(category, location, title):
             f"and work to solve the problem as early as possible."
         )
 
-@complaint_bp.route('/api/complaints', methods=['POST'])
+@complaint_bp.route('/api/complaints', methods=['POST', 'OPTIONS'])
+@complaint_bp.route('/api/complaints/', methods=['POST', 'OPTIONS'])
+@complaint_bp.route('/complaints', methods=['POST', 'OPTIONS'])
+@complaint_bp.route('/complaints/', methods=['POST', 'OPTIONS'])
 def submit_complaint():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
     data = request.get_json() or {}
 
     name = (data.get('name') or data.get('citizen_name') or '').strip()
@@ -243,8 +248,11 @@ def get_user_complaints():
         }
     }), 200
 
-@complaint_bp.route('/api/complaints/<string:complaint_id>', methods=['GET'])
+@complaint_bp.route('/api/complaints/<string:complaint_id>', methods=['GET', 'OPTIONS'])
+@complaint_bp.route('/complaints/<string:complaint_id>', methods=['GET', 'OPTIONS'])
 def get_complaint_details(complaint_id):
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
     conn = get_db_connection()
     complaint = conn.execute('''
         SELECT c.*, u.name as citizen_name, u.email as citizen_email, u.mobile as citizen_mobile
